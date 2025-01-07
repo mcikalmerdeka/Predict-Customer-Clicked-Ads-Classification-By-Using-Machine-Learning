@@ -4,8 +4,8 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import scipy.stats as stats
 
 # Import the preprocessed original data
-url_ori_processed = "https://raw.githubusercontent.com/mcikalmerdeka/Predict-Customer-Clicked-Ads-Classification-By-Using-Machine-Learning/main/Clicked%20Ads%20Dataset.csv"
-ori_df_preprocessed = pd.read_csv(url_ori_processed)
+url_ori_processed = "https://raw.githubusercontent.com/mcikalmerdeka/Predict-Customer-Clicked-Ads-Classification-By-Using-Machine-Learning/main/df_model.csv"
+ori_df_preprocessed = pd.read_csv(url_ori_processed, index_col=0)
 ori_df_preprocessed = ori_df_preprocessed.loc[:, ori_df_preprocessed.columns != "Clicked on Ad"]
 
 # =====================================================================Functions for data pre-processing========================================================================
@@ -41,7 +41,23 @@ def check_data_information(data, cols):
     )
     return desc_df
 
+## Initial data transformation
+def initial_data_transform(data):
 
+    # Rename column name for and maintain column name similarity
+    data = data.rename(columns={'Male': 'Gender',
+                                'Timestamp': 'Visit Time',
+                                'city' : 'City',
+                                'province' : 'Province',
+                                'category' : 'Category'})
+
+    # Re-arrange column (target 'Clicked on Ad' at the end --> personal preference)
+    data = data[[col for col in data.columns if col != 'Clicked on Ad'] + ['Clicked on Ad']]
+
+    # Change data type of Visit Time to datetime
+    data['Visit Time'] = pd.to_datetime(data['Visit Time'])
+
+    return data
 
 
 
