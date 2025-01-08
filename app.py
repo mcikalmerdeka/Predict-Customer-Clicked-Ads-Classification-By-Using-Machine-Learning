@@ -7,9 +7,13 @@ warnings.filterwarnings('ignore')
 
 # Import all preprocessing functions
 from preprocessing import (check_data_information,
-                           initial_data_transform
-                           
-                           )
+                           initial_data_transform,
+                           handle_missing_values,
+                           drop_columns,
+                           filter_outliers,
+                           feature_encoding,
+                           feature_scaling
+)
 
 from feature_definitions import get_feature_definitions
 
@@ -73,7 +77,7 @@ with st.expander("**Read Instructions First: About This App**"):
     - Note: Sample data is available for testing the model
 
     #### Data Processing Pipeline:
-    The application processes customer data through these steps:
+    Behind the scenes, the application processes customer data through these steps:
     1. Data Type Conversion
         - Standardize input formats
     2. Missing Value Treatment
@@ -102,23 +106,37 @@ with st.expander("**Read Instructions First: About This App**"):
     - Results may vary based on market conditions and campaign specifics
     """, unsafe_allow_html=True)
 
-
 # Load pre-trained model
 @st.cache_resource
 def load_model():
-    parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-    model_path = os.path.join(parent_dir, 'models', 'tuned_logistic_regression_model.joblib')
+    # Get the current script's directory
+    current_dir = os.getcwd()
     
-    try:
-        model = joblib.load(model_path)
-    except FileNotFoundError:
-        st.error(f"Model file not found at {model_path}. Please check the path and try again.")
-        return None, parent_dir, model_path
+    # Try multiple possible locations
+    possible_paths = [
+        # Try in a 'models' directory at the current level
+        os.path.join(current_dir, 'models', 'tuned_logistic_regression_model.joblib'),
+        # Try in a 'models' directory one level up
+        os.path.join(current_dir, os.pardir, 'models', 'tuned_logistic_regression_model.joblib'),
+        # Try directly in the current directory
+        os.path.join(current_dir, 'tuned_logistic_regression_model.joblib')
+    ]
+    
+    # Try each path
+    for model_path in possible_paths:
+        try:
+            model = joblib.load(model_path)
+            return model, os.path.dirname(os.path.dirname(model_path)), model_path
+        except FileNotFoundError:
+            continue
+    
+    # If no path worked, show error with all attempted paths
+    st.error(f"Model file not found. Attempted the following paths:\n" + 
+             "\n".join(possible_paths))
+    return None, current_dir, None
 
-    return model, parent_dir, model_path
-
-print(f"Parent Directory: {load_model()[1]}")
-print(f"Model Path: {load_model()[2]}")
+# Load the model
+model, model_dir, model_path = load_model() # To use the model, call model.predict(data)
 
 # Load original CSV data form author github
 url_ori = "https://raw.githubusercontent.com/mcikalmerdeka/Predict-Customer-Clicked-Ads-Classification-By-Using-Machine-Learning/main/Clicked%20Ads%20Dataset.csv"
@@ -293,6 +311,33 @@ if input_type.lower() == 'individual customer':
         submit_prediction_button = st.form_submit_button("Predict Click Probability")
         gather_data = True
 
+# elif input_type.lower() == 'batch data':
+#     st.write('Please upload the dataset of the customers \n\n Ensure your dataset matches the required structure for Clicked Ad Prediction (check the example data preview, exclude the target column)')
+
+#     # File upload
+#     uploaded_data = st.file_uploader("Choose a CSV file (**Please make sure you convert it to csv first**)", type="csv")
+
+#     if uploaded_data is not None:
+#         try:
+#             batch_input_df = pd.read_csv(uploaded_data)
+#             batch_input_df = initial_data_transform(batch_input_df)
+#             st.success("File uploaded successfully")
+#             gather_data = True
+
+#         except Exception as e:
+#             st.error(f"Error uploading the file: {str(e)}")
+
+#     # Add hint for user testing
+#     with st.expander("📌 Hint for Testing Model Prediction"):
+#         st.write("You can use the example data by clicking this button below as a reference for input values:")
+
+#         # First button with a unique key
+#         if st.button("Use Example Data", key="example_data_button"):
+#             # Load example CSV data from author's GitHub
+#             url_example_batch_df = "https://raw.githubusercontent.com/mcikalmerdeka/Loan-Prediction-Based-on-Costumer-Behaviour/main/data/batch_example.csv"
+#             batch_input_df = pd.read_csv(url_example_batch_df)
+#             batch_input_df = initial_data_transform(batch_input_df)
+#             gather_data = True
 
 # Prediction Section
 
@@ -305,6 +350,80 @@ if gather_data and input_type.lower() == 'individual customer':
         # Show input data
         st.subheader("New Customer Input Data Preview")
         st.write(input_df)
+
+        # Preprocessing steps
+
+        ## 1. Drop some uncessary columns
+        try:
+            input_df = drop_columns(input_df, columns=['Visit Time'])
+        except Exception as e:  
+            st.error(f"Error in dropping columns: {str(e)}")
+
+        ## 2. Handle Missing Values
+        try:
+            input_df[['Daily Time Spent on Site', 'Daily Internet Usage']] = handle_missing_values(input_df, columns=['Daily Time Spent on Site', 'Daily Internet Usage'], strategy='fill', imputation_method='mean')
+            input_df['Area Income'] = handle_missing_values(input_df, columns=['Area Income'], strategy='fill', imputation_method='median')
+            input_df['Gender'] = handle_missing_values(input_df, columns=['Gender'], strategy='fill', imputation_method='mode')
+        except Exception as e:
+            st.error(f"Error in handling missing values: {str(e)}")
+
+        ## 3. Handle Outliers
+        try:
+            input_df = filter_outliers(input_df, col_series=['Area Income'], method='iqr')
+        except Exception as e:
+            st.error(f"Error in handling outliers: {str(e)}")
+
+        # Check data after drop unecessart columns, handling missing values and outliers
+        st.subheader("After Drop Columns, Handling Missing Values, and Outliers")
+        st.write(input_df)
+
+        ## 4. Feature encoding
+        try:
+            input_df, expected_columns = feature_encoding(input_df, original_data=ori_df_preprocessed)
+            st.session_state.expected_columns = expected_columns
+        except Exception as e:
+            st.error(f"Error in feature encoding: {str(e)}")
+            st.write("Debug information:")
+            st.write("Current columns:", input_df.columns.to_list())
+            st.write("Expected columns:", expected_columns)
+
+        # Check data after encoding
+        st.subheader("After Feature Encoding")
+        st.write(input_df)
+
+        ## 5. Feature Scaling
+        try:
+            input_df = feature_scaling(data=input_df, original_data=ori_df_preprocessed)
+        except Exception as e:
+            st.error(f"Error in feature scaling: {str(e)}")
+
+        # Check data after scaling
+        st.subheader("After Feature Scaling")
+        st.write(input_df)
+
+        # Prediction Section
+        st.subheader("Prediction Section")
+
+        # Create a copy for preprocessing result
+        model_df = input_df.copy()
+
+        # Display the prediction result
+        try:
+            prediction = model.predict(model_df)
+            prediction_proba = model.predict_proba(model_df)
+
+            # Display prediction probability
+            st.write(f"Probabilities for both classes: {prediction_proba[0]}")
+
+            # Display prediction result with explanation
+            # 0: Not Clicked, 1: Clicked
+            if prediction[0] == 0:
+                st.error("The customer is predicted as **Not Clicked**.\n\n**Not Clicked** means the customer is likely not to click on the ad.")
+            else:
+                st.success("The customer is predicted as **Clicked**.\n\n**Clicked** means the customer is likely to click on the ad.")
+        
+        except Exception as e:
+            st.error(f"Error in prediction: {str(e)}")
 
 
 
