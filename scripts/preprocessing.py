@@ -4,7 +4,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import scipy.stats as stats
 
 # Import the preprocessed original data
-url_ori_processed = "https://raw.githubusercontent.com/mcikalmerdeka/Predict-Customer-Clicked-Ads-Classification-By-Using-Machine-Learning/main/df_model.csv"
+url_ori_processed = "https://raw.githubusercontent.com/mcikalmerdeka/Predict-Customer-Clicked-Ads-Classification-By-Using-Machine-Learning/main/data/df_model.csv"
 ori_df_preprocessed = pd.read_csv(url_ori_processed, index_col=0)
 ori_df_preprocessed = ori_df_preprocessed.loc[:, ori_df_preprocessed.columns != "Clicked on Ad"]
 

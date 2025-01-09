@@ -140,7 +140,7 @@ def load_model():
 model, model_dir, model_path = load_model() # To use the model, call model.predict(data)
 
 # Load original CSV data form author github
-url_ori = "https://raw.githubusercontent.com/mcikalmerdeka/Predict-Customer-Clicked-Ads-Classification-By-Using-Machine-Learning/main/Clicked%20Ads%20Dataset.csv"
+url_ori = "https://raw.githubusercontent.com/mcikalmerdeka/Predict-Customer-Clicked-Ads-Classification-By-Using-Machine-Learning/main/data/Clicked%20Ads%20Dataset.csv"
 ori_df = pd.read_csv(url_ori, index_col=0)
 
 # Initial transform for original dataframe
@@ -192,7 +192,7 @@ target_col = "Clicked on Ad"
 gather_data = False
 
 # Import the preprocessed original data (this will be used to match the columns used in the model)
-url_ori_processed = "https://raw.githubusercontent.com/mcikalmerdeka/Predict-Customer-Clicked-Ads-Classification-By-Using-Machine-Learning/main/df_model.csv"
+url_ori_processed = "https://raw.githubusercontent.com/mcikalmerdeka/Predict-Customer-Clicked-Ads-Classification-By-Using-Machine-Learning/main/data/df_model.csv"
 ori_df_preprocessed = pd.read_csv(url_ori_processed)
 ori_df_preprocessed = ori_df_preprocessed.loc[:, ori_df_preprocessed.columns != target_col]
 
@@ -335,7 +335,7 @@ elif input_type.lower() == 'batch data':
         # First button with a unique key
         if st.button("Use Example Data", key="example_data_button"):
             # Load example CSV data from author's GitHub
-            url_example_batch_df = "https://raw.githubusercontent.com/mcikalmerdeka/Predict-Customer-Clicked-Ads-Classification-By-Using-Machine-Learning/main/batch_example.csv"
+            url_example_batch_df = "https://raw.githubusercontent.com/mcikalmerdeka/Predict-Customer-Clicked-Ads-Classification-By-Using-Machine-Learning/main/data/batch_example.csv"
             batch_input_df = pd.read_csv(url_example_batch_df)
             batch_input_df = initial_data_transform(batch_input_df)
             gather_data = True
