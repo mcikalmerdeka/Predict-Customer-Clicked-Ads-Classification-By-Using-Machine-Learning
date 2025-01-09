@@ -24,8 +24,9 @@ st.title("Digital Ad Performance Analyzer")
 # Author Information
 st.markdown("""
 #### Author
-Developed by : Muhammad Cikal Merdeka | Data Analyst/Data Scientist
+Developed by : Muhammad Cikal Merdeka | Data Analyst/Data Scientist | Data Department
 
+- [Email](mailto:mcikalmerdeka@gmail.com)
 - [GitHub Profile](https://github.com/mcikalmerdeka)  
 - [LinkedIn Profile](https://www.linkedin.com/in/mcikalmerdeka)
 """)
@@ -276,30 +277,30 @@ if input_type.lower() == 'individual customer':
 
             # Example data of a customer who is predicted as Clicked on Ad
             example_data_1 = {
-                "Daily Time Spent on Site": 65,
-                "Age": 36,
-                "Area Income": 384864670.64,
-                "Daily Internet Usage": 180,
+                "Daily Time Spent on Site": 33,
+                "Age": 55,
+                "Area Income": 97975500,
+                "Daily Internet Usage": 105,
                 "Gender": "Perempuan",
-                "Visit Date": "2021-01-01",
+                "Visit Date": "2023-08-10",
                 "City": "Jakarta Timur",
                 "Province": "Daerah Khusus Ibukota Jakarta",
-                "Category": "Furniture",
+                "Category": "Fashion",
             }
             st.table(pd.DataFrame([example_data_1]))
             st.write("Which will result in a prediction of <span style='color:green;'>**Clicked on Ad**</span>", unsafe_allow_html=True)
             
             # Example data of a customer who is predicted as Not Clicked on Ad
             example_data_2 = {
-                "Daily Time Spent on Site": 25,
-                "Age": 45,
-                "Area Income": 45000000.0,
-                "Daily Internet Usage": 100,
+                "Daily Time Spent on Site": 92,
+                "Age": 19,
+                "Area Income": 556393600,
+                "Daily Internet Usage": 267,
                 "Gender": "Laki-laki",
-                "Visit Date": "2021-01-01",
-                "City": "Jakarta Selatan",
-                "Province": "Daerah Khusus Ibukota Jakarta",
-                "Category": "Fashion"
+                "Visit Date": "2023-08-10",
+                "City": "Pekanbaru",
+                "Province": "Riau",
+                "Category": "Otomotif"
             }
             st.table(pd.DataFrame([example_data_2]))
             st.write("Which will result in a prediction of <span style='color:red;'>**Not Clicked on Ad**</span>", unsafe_allow_html=True)
@@ -311,33 +312,33 @@ if input_type.lower() == 'individual customer':
         submit_prediction_button = st.form_submit_button("Predict Click Probability")
         gather_data = True
 
-# elif input_type.lower() == 'batch data':
-#     st.write('Please upload the dataset of the customers \n\n Ensure your dataset matches the required structure for Clicked Ad Prediction (check the example data preview, exclude the target column)')
+elif input_type.lower() == 'batch data':
+    st.write('Please upload the dataset of the customers \n\n Ensure your dataset matches the required structure for Clicked Ads Prediction (check the example data preview, exclude the target column)')
 
-#     # File upload
-#     uploaded_data = st.file_uploader("Choose a CSV file (**Please make sure you convert it to csv first**)", type="csv")
+    # File upload
+    uploaded_data = st.file_uploader("Choose a CSV file (**Please make sure you convert it to csv first**)", type="csv")
 
-#     if uploaded_data is not None:
-#         try:
-#             batch_input_df = pd.read_csv(uploaded_data)
-#             batch_input_df = initial_data_transform(batch_input_df)
-#             st.success("File uploaded successfully")
-#             gather_data = True
+    if uploaded_data is not None:
+        try:
+            batch_input_df = pd.read_csv(uploaded_data)
+            batch_input_df = initial_data_transform(batch_input_df)
+            st.success("File uploaded successfully")
+            gather_data = True
 
-#         except Exception as e:
-#             st.error(f"Error uploading the file: {str(e)}")
+        except Exception as e:
+            st.error(f"Error uploading the file: {str(e)}")
 
-#     # Add hint for user testing
-#     with st.expander("📌 Hint for Testing Model Prediction"):
-#         st.write("You can use the example data by clicking this button below as a reference for input values:")
+    # Add hint for user testing
+    with st.expander("📌 Hint for Testing Model Prediction"):
+        st.write("You can use the example data by clicking this button below as a reference for input values:")
 
-#         # First button with a unique key
-#         if st.button("Use Example Data", key="example_data_button"):
-#             # Load example CSV data from author's GitHub
-#             url_example_batch_df = "https://raw.githubusercontent.com/mcikalmerdeka/Loan-Prediction-Based-on-Costumer-Behaviour/main/data/batch_example.csv"
-#             batch_input_df = pd.read_csv(url_example_batch_df)
-#             batch_input_df = initial_data_transform(batch_input_df)
-#             gather_data = True
+        # First button with a unique key
+        if st.button("Use Example Data", key="example_data_button"):
+            # Load example CSV data from author's GitHub
+            url_example_batch_df = "https://raw.githubusercontent.com/mcikalmerdeka/Predict-Customer-Clicked-Ads-Classification-By-Using-Machine-Learning/main/batch_example.csv"
+            batch_input_df = pd.read_csv(url_example_batch_df)
+            batch_input_df = initial_data_transform(batch_input_df)
+            gather_data = True
 
 # Prediction Section
 
@@ -424,6 +425,87 @@ if gather_data and input_type.lower() == 'individual customer':
         
         except Exception as e:
             st.error(f"Error in prediction: {str(e)}")
+
+## Prediction for batch data
+elif gather_data and input_type.lower() == 'batch data':
+        # Show batch input data
+        st.subheader("Batch Data Preview")
+        st.write(batch_input_df.head())
+
+        # Preprocessing steps
+
+        ## 1. Drop some uncessary columns
+        try:
+            batch_input_df = drop_columns(batch_input_df, columns=['Visit Time'])
+        except Exception as e:  
+            st.error(f"Error in dropping columns: {str(e)}")
+
+        ## 2. Handle Missing Values
+        try:
+            batch_input_df[['Daily Time Spent on Site', 'Daily Internet Usage']] = handle_missing_values(batch_input_df, columns=['Daily Time Spent on Site', 'Daily Internet Usage'], strategy='fill', imputation_method='mean')
+            batch_input_df['Area Income'] = handle_missing_values(batch_input_df, columns=['Area Income'], strategy='fill', imputation_method='median')
+            batch_input_df['Gender'] = handle_missing_values(batch_input_df, columns=['Gender'], strategy='fill', imputation_method='mode')
+        except Exception as e:
+            st.error(f"Error in handling missing values: {str(e)}")
+
+        ## 3. Handle Outliers
+        try:
+            batch_input_df = filter_outliers(batch_input_df, col_series=['Area Income'], method='iqr')
+        except Exception as e:
+            st.error(f"Error in handling outliers: {str(e)}")
+
+        # Check data after drop unecessart columns, handling missing values and outliers
+        st.subheader("After Drop Columns, Handling Missing Values, and Outliers")
+        st.write(batch_input_df)
+
+        ## 4. Feature encoding
+        try:
+            batch_input_df, expected_columns = feature_encoding(batch_input_df, original_data=ori_df_preprocessed)
+            st.session_state.expected_columns = expected_columns
+        except Exception as e:
+            st.error(f"Error in feature encoding: {str(e)}")
+            st.write("Debug information:")
+            st.write("Current columns:", batch_input_df.columns.to_list())
+            st.write("Expected columns:", expected_columns)
+
+        # Check data after encoding
+        st.subheader("After Feature Encoding")
+        st.write(batch_input_df)
+
+        ## 5. Feature Scaling
+        try:
+            batch_input_df = feature_scaling(data=batch_input_df, original_data=ori_df_preprocessed)
+        except Exception as e:
+            st.error(f"Error in feature scaling: {str(e)}")
+
+        # Check data after scaling
+        st.subheader("After Feature Scaling")
+        st.write(batch_input_df)     
+
+        # Prediction Section
+        st.subheader("Prediction Section")
+
+        # Create a copy for preprocessing result
+        model_df = batch_input_df.copy()
+
+        # Display prediction result with explanation
+        # 0: Not Clicked, 1: Clicked
+        try:
+            for row in range(len(model_df)):
+                prediction = model.predict(model_df.iloc[row, :].values.reshape(1, -1))
+                prediction_proba = model.predict_proba(model_df.iloc[row, :].values.reshape(1, -1))
+
+                # Display prediction probability
+                st.write(f"Probabilities for both classes for Customer {row + 1}: {prediction_proba[0]}")
+
+                # Display prediction result with explanation
+                if prediction[0] == 0:
+                    st.error(f"Customer {row + 1} is predicted as **Not Clicked**.\n\n**Not Clicked** means the customer is likely not to click on the ad.")
+                else:
+                    st.success(f"Customer {row + 1} is predicted as **Clicked**.\n\n**Clicked** means the customer is likely to click on the ad.")
+
+        except Exception as e:
+            st.error(f"Error in prediction: {str(e)}") 
 
 
 
